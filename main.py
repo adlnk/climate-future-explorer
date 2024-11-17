@@ -21,23 +21,6 @@ with col1:
     # Location input
     address = st.text_input("Enter your address:", placeholder="e.g., 1234 Main St, Seattle, WA 98101")
 
-    # Interest sliders
-    st.subheader("What aspects interest you most?")
-    financial_interest = st.toggle(
-        "Impact on personal finances (housing costs, utilities, insurance, etc.)",
-        help="Higher values will provide more detail about financial impacts"
-    )
-    
-    demographic_interest = st.toggle(
-        "Impact on local demographics (migration, community changes, etc.)",
-        help="Higher values will provide more detail about demographic changes"
-    )
-    
-    climate_interest = st.toggle(
-        "Impact on local climate (temperature, precipitation, extreme events)",
-        help="Higher values will provide more detail about climate changes"
-    )
-
     # Submit button
     submit = st.button("Analyze Future Impact", type="primary")
 
@@ -46,6 +29,8 @@ with col2:
                          min_value = datetime.date(2029, 1, 1),
                          max_value=datetime.date(2050,1,1),
                          format = 'DD/MM/YYYY')
+
+
 
 # Only process if submit is clicked and address is provided
 if submit and address:
@@ -58,30 +43,19 @@ if submit and address:
             # Get climate data
             df = get_climate_data(lat, lon)
             st.dataframe(df)
+
             # Get AI analysis
-            response_text = get_ai_analysis(location_name, df, financial_interest, demographic_interest, climate_interest, year)
+            response_text = get_ai_analysis(location_name, df, year)
             
             # Display results
             st.header("Your Climate Future")
             
-            try:
-                # Split AI response into narrative and statistics
-                if "PART 2:" in response_text:
-                    response_parts = response_text.split("PART 2:")
-                    
-                    st.subheader("A Day in Your Future Life")
-                    st.write(response_parts[0].replace("PART 1:", "").strip())
-                    
-                    st.subheader("Supporting Data")
-                    st.write(response_parts[1].strip())
-                else:
-                    st.subheader("Climate Impact Analysis")
-                    st.write(response_text)
-            except Exception as e:
-                st.error(f"Error processing AI response: {str(e)}")
+            st.write(response_text)
             
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
+
+
 
 # Sidebar with additional information
 with st.sidebar:

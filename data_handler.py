@@ -99,9 +99,9 @@ def get_climate_data(lat, lon, start_date="1950-01-01", end_date="2050-12-31"):
 
 
 
-def get_ai_analysis(location_name, df, financial_interest, demographic_interest, climate_interest, year):
+def get_ai_analysis(location_name, df, year):
     """Get AI analysis of climate impact"""
-    prompt = f"""You are an expert climate analyst tasked with creating a personal, first-person narrative about life in [LOCATION] in the year [YEAR]. Using web searches for current climate data, scientific projections, and local planning documents, paint a vivid picture of how climate change has transformed daily life. Your narrative should feel authentic while being grounded in scientific evidence.
+    prompt = f"""You are an expert climate analyst tasked with creating a personal, first-person narrative about life in [LOCATION] in the year [YEAR]. Using web searches for current climate data such as this data:{df}, scientific projections, and local planning documents, paint a vivid picture of how climate change has transformed daily life. Your narrative should feel authentic while being grounded in scientific evidence.
 Begin with: 'Let me take you through a typical day in {location_name} in {year.year}...'
 As you craft the narrative, weave in detailed analysis of:
 	1.	Daily Life & Weather
