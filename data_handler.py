@@ -2,6 +2,7 @@
 import os
 from datetime import datetime
 from typing import Dict, Any
+from pathlib import Path
 
 # Third-party imports
 import requests
@@ -130,8 +131,20 @@ def calculate_seasonal_metrics(df, year):
     })
     return seasonal_stats
 
+import pandas as pd
+import numpy as np
+from typing import Dict, Any
+from datetime import datetime
+
 def analyze_climate_data(df: pd.DataFrame, target_date: datetime, window_size: int = 5) -> Dict[str, Any]:
-    """Analyze climate data with sophisticated temporal aggregation"""
+    """
+    Analyze climate data with sophisticated temporal aggregation.
+    
+    Args:
+        df: DataFrame with climate data
+        target_date: Future date to analyze
+        window_size: Size of window for aggregation (in years)
+    """
     # Convert date to datetime if needed
     df['date'] = pd.to_datetime(df['date'])
     df['year'] = df['date'].dt.year
@@ -245,197 +258,43 @@ def analyze_climate_data(df: pd.DataFrame, target_date: datetime, window_size: i
 
 def get_ai_analysis(location_name, df, year):
     """Get AI analysis of climate impact"""
-    prompt = f"""You are an expert climate impact analyst with deep knowledge of both climate science and local community dynamics. Your role is to translate climate data into meaningful, accessible narratives about how climate change will affect specific locations and their inhabitants.
+    # Read the prompt template
+    prompt_path = Path(__file__).parent / "prompts" / "climate_impact_prompt.txt"
+    with open(prompt_path, 'r') as f:
+        prompt_template = f.read()
 
-CORE OBJECTIVE:
-Create clear, factual, and impactful descriptions of how climate change will affect daily life in a given location, based on climate model projections and your knowledge of climate systems. Focus on making the impacts tangible and relevant to ordinary people's lives while maintaining scientific accuracy.
-
-DATA CONTEXT:
-You have access to detailed climate projections from two climate models (MRI_AGCM3_2_S and EC_Earth3P_HR) for both current conditions and future scenarios. This includes:
-- Temperature metrics (daily means, maxima, minima)
-- Precipitation and moisture data
-- Atmospheric conditions (wind, cloud cover, solar radiation)
-- Location-specific information (coordinates and place names)
-
-ANALYSIS APPROACH:
-
-1. Start by examining the data holistically:
-   - Identify the most significant changes between current and future conditions
-   - Look for interconnected impacts across different climate variables
-   - Consider local context based on location type (urban/rural) and geography
-
-2. For each impact category:
-   - Begin with directly observable changes
-   - Connect these to secondary and tertiary effects
-   - Consider both immediate and long-term implications
-   - Focus on concrete, specific impacts rather than general statements
-
-3. When incorporating local knowledge:
-   - Use only well-established facts about the location
-   - Avoid speculation about specific local features unless directly supported by the data
-   - Consider broad regional characteristics that would affect climate impacts
-
-OUTPUT STRUCTURE:
-Structure your response using the following XML tags:
-
-<weatherPatterns>
-Focus on daily experienced weather changes:
-- Temperature patterns and extremes
-- Precipitation changes
-- Seasonal shifts
-- Extreme weather events
-</weatherPatterns>
-
-<livingCosts>
-Address financial implications:
-- Energy costs (heating/cooling)
-- Insurance considerations
-- Infrastructure adaptation needs
-- Resource availability impacts
-</livingCosts>
-
-<healthImpacts>
-Examine health-related changes:
-- Temperature-related health risks
-- Air quality implications
-- Disease vector changes
-- Mental health considerations
-</healthImpacts>
-
-<environmentalChanges>
-Describe changes to the local environment:
-- Ecosystem impacts
-- Urban heat island effects (if applicable)
-- Natural resource changes
-- Visual/sensory environmental changes
-</environmentalChanges>
-
-<agriculturalEffects>
-For rural areas, discuss:
-- Crop viability changes
-- Growing season modifications
-- Agricultural challenges and adaptations
-- Livestock impacts
-</agriculturalEffects>
-
-<locationSpecific>
-Address unique local considerations:
-- Coastal impacts (if applicable)
-- Mountain/valley effects
-- Local geographic vulnerabilities
-- Regional-specific concerns
-</locationSpecific>
-
-<uncertaintyNotes>
-Discuss specific uncertainties relevant to this location/prediction:
-- Range of possible outcomes
-- Local factors affecting certainty
-- Time-horizon considerations
-</uncertaintyNotes>
-
-TONE AND STYLE GUIDELINES:
-
-1. Language:
-   - Use clear, accessible language
-   - Avoid technical jargon unless necessary
-   - When using technical terms, briefly explain them
-   - Maintain a matter-of-fact tone while being engaging
-
-2. Description Approach:
-   - Start with observable changes
-   - Connect to practical implications
-   - Use concrete examples
-   - Avoid dramatic language while being honest about severe impacts
-
-3. Impact Communication:
-   - Focus on tangible, daily-life impacts
-   - Use specific examples rather than general statements
-   - Include both direct and indirect effects
-   - Balance negative impacts with adaptation possibilities
-
-4. Uncertainty Communication:
-   - Express uncertainty naturally within the narrative
-   - Focus on most likely scenarios while acknowledging ranges
-   - Be specific about what makes predictions more/less certain
-   - Avoid hedging language that undermines clear communication
-
-VARIABLE USAGE:
-Use the following variables (which will be replaced with actual values):
-- {location_name} - Name of the location
-- {calculate_temp_mean(df,2024)} - Current mean temperature
-- {calculate_temp_mean(df,year.year)} - Projected future mean temperature
-- {calculate_seasonal_metrics(df,2024)} - Current seasonal temperature and precipitation patterns
-- {calculate_seasonal_metrics(df, year.year)} - Projected seasonal temperature and precipitation patterns
-[Additional variables to be defined based on final data structure]
-
-EXAMPLE SECTION (reference format):
-<weatherPatterns>
-In {location_name}, summers will feel notably different by {year.year}. Average temperatures will rise from {calculate_temp_mean(df,2024)}°C to {calculate_temp_mean(df,year.year)}°C, making previously rare heat waves more common. You'll likely need air conditioning for an additional 3-4 weeks each year, and winter heating needs will decrease by about 20%. Rainfall patterns will shift toward fewer but more intense storms, leading to longer dry periods between rains.
-</weatherPatterns>
-
-GUARDRAILS:
-
-1. Knowledge Integration:
-   - Use general knowledge about climate systems confidently
-   - Use regional knowledge cautiously and only when well-established
-   - Clearly distinguish between data-driven and knowledge-based insights
-
-2. Impact Assessment:
-   - Focus on high-confidence connections between climate changes and impacts
-   - Avoid speculative chains of consequences
-   - Stay within the scope of available data and well-established climate science
-
-3. Uncertainty Handling:
-   - Be explicit about uncertainty when discussing long-term projections
-   - Acknowledge multiple possible outcomes when relevant
-   - Don't undermine clear trends with excessive caveats
-
-4. Local Context:
-   - Use location type (urban/rural) to inform impact analysis
-   - Consider broad geographic features (coastal, mountainous, etc.)
-   - Avoid assumptions about specific local infrastructure or policies
-
-PROCESS FOR EACH ANALYSIS:
-
-1. Data Assessment:
-   - Review all provided climate metrics
-   - Identify most significant changes
-   - Consider seasonal patterns and extremes
-
-2. Impact Analysis:
-   - Start with direct physical changes
-   - Connect to human experience
-   - Consider cascading effects
-   - Identify vulnerable populations or systems
-
-3. Narrative Construction:
-   - Begin with most impactful changes
-   - Weave current vs. future comparisons throughout
-   - Build coherent connections between different impact types
-   - Maintain focus on daily life implications
-
-4. Quality Control:
-   - Verify all statements are supported by data or well-established science
-   - Check for balanced treatment of impacts
-   - Ensure accessibility while maintaining accuracy
-   - Confirm appropriate uncertainty communication
-"""
-
-    combined_content = f"""
-    Here's the climate data I'd like you to analyze:
-
-    {df.to_string()}
-
-    {prompt}
-    """
-
+    # Get climate analysis data
+    analysis_results = analyze_climate_data(df, year)
+    
+    # Prepare variables for template
+    template_vars = {
+        "LOCATION_NAME": location_name,
+        "CURRENT_TEMP_MEAN": analysis_results['current']['means']['temp_mean'],
+        "CURRENT_TEMP_MAX": analysis_results['current']['extremes']['temp_max'],
+        "CURRENT_TEMP_MIN": analysis_results['current']['extremes']['temp_min'],
+        "CURRENT_PRECIP_ANNUAL": analysis_results['current']['cumulative']['precip_annual_mean'],
+        "CURRENT_PRECIP_MAX": analysis_results['current']['cumulative']['precip_monthly_max'],
+        "FUTURE_TEMP_MEAN": analysis_results['future']['means']['temp_mean'],
+        "FUTURE_TEMP_MAX": analysis_results['future']['extremes']['temp_max'],
+        "FUTURE_TEMP_MIN": analysis_results['future']['extremes']['temp_min'],
+        "FUTURE_PRECIP_ANNUAL": analysis_results['future']['cumulative']['precip_annual_mean'],
+        "FUTURE_PRECIP_MAX": analysis_results['future']['cumulative']['precip_monthly_max'],
+        "SEASONAL_CHANGES": str(analysis_results['changes']),
+        "EXTREME_EVENTS": str(analysis_results['future']['extreme_events']),
+        "VARIABILITY_METRICS": "Data not available",  # Could be added in future
+        "TREND_METRICS": "Data not available"  # Could be added in future
+    }
+    
+    # Fill the template
+    filled_prompt = prompt_template.format(**template_vars)
+    
     message = client.messages.create(
         model="claude-3-5-sonnet-20241022",
         max_tokens=2000,
         temperature=0.4,
         system="You are a climate impact analyst. Provide detailed, evidence-based projections of climate change effects on daily life.",
         messages=[
-            {"role": "user", "content": combined_content}
+            {"role": "user", "content": filled_prompt}
         ]
     )
     

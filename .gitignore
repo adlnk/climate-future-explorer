@@ -163,3 +163,4 @@ cython_debug/
 
 # Misc
 collation.txt
+*/.DS_Store
