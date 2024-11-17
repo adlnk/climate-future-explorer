@@ -3,10 +3,8 @@ import datetime
 from data_handler import get_location_data, get_climate_data, get_ai_analysis
 from visualization import create_temperature_plot, create_precipitation_plot
 
-# Page configuration
 st.set_page_config(page_title="Climate Future Explorer", layout="wide")
 
-# App header and description
 st.title("Climate Future Explorer")
 st.write("""
 Explore how climate change could affect your daily life in the next 5-10 years. 
@@ -14,14 +12,11 @@ Enter your location and adjust the sliders to focus on aspects that matter most 
 We'll provide a personalized analysis of how your life might change, backed by data and research.
 """)
 
-# Create two columns for input
 col1, col2 = st.columns([2, 1])
 
 with col1:
-    # Location input
     address = st.text_input("Enter your address:", placeholder="e.g., 1234 Main St, Seattle, WA 98101")
 
-    # Submit button
     submit = st.button("Analyze Future Impact", type="primary")
 
 with col2:
@@ -32,7 +27,6 @@ with col2:
 
 
 
-# Only process if submit is clicked and address is provided
 if submit and address:
     try:
         # Get location data
