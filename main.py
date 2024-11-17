@@ -114,6 +114,26 @@ if submit and address:
                 agri_content = extract_section_content(response_text, "agriculturalEffects")
                 st.markdown(agri_content)
 
+            # Comfort Analysis Section
+            with st.expander("🌡️ Comfort & Living Conditions", expanded=True):
+                comfort_content = extract_section_content(response_text, "comfort_analysis")
+                st.markdown(comfort_content)
+
+            # Energy Implications Section
+            with st.expander("⚡ Energy Impact", expanded=True):
+                energy_content = extract_section_content(response_text, "energy_implications")
+                st.markdown(energy_content)
+
+            # Detailed Seasonal Changes
+            with st.expander("🗓️ Detailed Seasonal Changes", expanded=True):
+                seasonal_content = extract_section_content(response_text, "seasonal_details")
+                st.markdown(seasonal_content)
+
+            # Outdoor Activities Impact
+            with st.expander("🏃‍♂️ Outdoor Activities Impact", expanded=True):
+                outdoor_content = extract_section_content(response_text, "outdoor_activities")
+                st.markdown(outdoor_content)
+
             # Uncertainty Notes Section
             with st.expander("ℹ️ Uncertainty Factors", expanded=True):
                 uncertainty_content = extract_section_content(response_text, "uncertaintyNotes")

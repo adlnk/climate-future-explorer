@@ -7,26 +7,49 @@ DATA CONTEXT:
 You have access to climate data from two models (MRI_AGCM3_2_S and EC_Earth3P_HR) analyzed across three time periods:
 
 Current Conditions (5-year window average):
-- Temperature metrics:
-  * Mean daily: {CURRENT_TEMP_MEAN}
-  * Maximum (highest in period): {CURRENT_TEMP_MAX}
-  * Minimum (lowest in period): {CURRENT_TEMP_MIN}
-- Precipitation:
-  * Annual mean: {CURRENT_PRECIP_ANNUAL}
-  * Maximum monthly: {CURRENT_PRECIP_MAX}
-- Other metrics:
-  [Additional current metrics...]
+- Temperature Metrics:
+  * Mean daily: {CURRENT_TEMP_MEAN}°C
+  * Maximum: {CURRENT_TEMP_MAX}°C
+  * Minimum: {CURRENT_TEMP_MIN}°C
+  * Seasonal variations: {CURRENT_SEASONAL_TEMPS}
+- Moisture & Precipitation:
+  * Annual precipitation: {CURRENT_PRECIP_ANNUAL}mm
+  * Maximum monthly precipitation: {CURRENT_PRECIP_MAX}mm
+  * Annual snowfall: {CURRENT_SNOW_ANNUAL}mm
+  * Maximum monthly snowfall: {CURRENT_SNOW_MAX}mm
+  * Relative humidity range: {CURRENT_HUMIDITY_MIN}% to {CURRENT_HUMIDITY_MAX}%
+- Atmospheric Conditions:
+  * Cloud cover average: {CURRENT_CLOUD_COVER}%
+  * Solar radiation: {CURRENT_RADIATION}kJ/m²
+  * Maximum wind speed: {CURRENT_WIND_MAX}m/s
 
 Future Conditions (5-year window centered on target date):
-- Temperature metrics:
-  * Mean daily: {FUTURE_TEMP_MEAN}
-  * Maximum (highest in period): {FUTURE_TEMP_MAX}
-  * Minimum (lowest in period): {FUTURE_TEMP_MIN}
-- Precipitation:
-  * Annual mean: {FUTURE_PRECIP_ANNUAL}
-  * Maximum monthly: {FUTURE_PRECIP_MAX}
-- Other metrics:
-  [Additional future metrics...]
+- Temperature Metrics:
+  * Mean daily: {FUTURE_TEMP_MEAN}°C
+  * Maximum: {FUTURE_TEMP_MAX}°C
+  * Minimum: {FUTURE_TEMP_MIN}°C
+  * Seasonal variations: {FUTURE_SEASONAL_TEMPS}
+- Moisture & Precipitation:
+  * Annual precipitation: {FUTURE_PRECIP_ANNUAL}mm
+  * Maximum monthly precipitation: {FUTURE_PRECIP_MAX}mm
+  * Annual snowfall: {FUTURE_SNOW_ANNUAL}mm
+  * Maximum monthly snowfall: {FUTURE_SNOW_MAX}mm
+  * Relative humidity range: {FUTURE_HUMIDITY_MIN}% to {FUTURE_HUMIDITY_MAX}%
+- Atmospheric Conditions:
+  * Cloud cover average: {FUTURE_CLOUD_COVER}%
+  * Solar radiation: {FUTURE_RADIATION}kJ/m²
+  * Maximum wind speed: {FUTURE_WIND_MAX}m/s
+
+Seasonal Analysis:
+- Winter metrics: {WINTER_CHANGES}
+- Spring metrics: {SPRING_CHANGES}
+- Summer metrics: {SUMMER_CHANGES}
+- Autumn metrics: {AUTUMN_CHANGES}
+
+Extreme Events Analysis:
+- Heat events: {HEAT_EVENTS}
+- Precipitation extremes: {PRECIP_EVENTS}
+- Wind extremes: {WIND_EVENTS}
 
 Trend Analysis (Supporting Context):
 - Seasonal changes: {SEASONAL_CHANGES}
@@ -91,6 +114,40 @@ Describe environmental changes affecting daily life:
 - Water-related changes
 Focus on impacts relevant to residents rather than technical details.
 </environment_changes>
+
+<comfort_analysis>
+Analyze changes in human comfort conditions:
+- Heat index implications (combining temperature and humidity)
+- Wind chill effects
+- Indoor comfort requirements
+- Outdoor activity impacts
+Focus on how combined effects of temperature, humidity, and wind will affect daily life.
+</comfort_analysis>
+
+<energy_implications>
+Analyze energy needs based on:
+- Solar potential (using radiation data)
+- Heating/cooling requirements
+- Seasonal energy demand shifts
+Include both household and infrastructure implications.
+</energy_implications>
+
+<seasonal_details>
+Provide detailed seasonal changes:
+- Winter: snow patterns, freeze-thaw cycles, winter recreation impacts
+- Spring: rainfall patterns, growing season changes
+- Summer: heat stress, drought risks, cooling needs
+- Autumn: extended summer conditions, precipitation changes
+Base analysis on detailed seasonal metrics.
+</seasonal_details>
+
+<outdoor_activities>
+Analyze impacts on:
+- Sports and recreation (using wind/precipitation/temperature data)
+- Gardening and outdoor work (using seasonal/radiation data)
+- Construction and maintenance timing
+Consider how combined weather factors affect outdoor planning.
+</outdoor_activities>
 
 <adaptation_needs>
 Outline practical implications:

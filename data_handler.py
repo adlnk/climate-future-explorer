@@ -257,7 +257,7 @@ def analyze_climate_data(df: pd.DataFrame, target_date: datetime, window_size: i
     }
 
 def get_ai_analysis(location_name, df, year):
-    """Get AI analysis of climate impact"""
+    """Get AI analysis of climate impact with comprehensive metrics"""
     # Read the prompt template
     prompt_path = Path(__file__).parent / "prompts" / "climate_impact_prompt.txt"
     with open(prompt_path, 'r') as f:
@@ -266,26 +266,65 @@ def get_ai_analysis(location_name, df, year):
     # Get climate analysis data
     analysis_results = analyze_climate_data(df, year)
     
-    # Prepare variables for template
+    def format_seasonal_data(period_data, metric_type):
+        """Helper function to format seasonal data nicely"""
+        return {
+            season: {
+                key: value for key, value in data.items()
+                if key.startswith(metric_type)
+            }
+            for season, data in period_data['seasonal'].items()
+        }
+
+    # Prepare comprehensive template variables
     template_vars = {
+        # Basic location info
         "LOCATION_NAME": location_name,
-        "CURRENT_TEMP_MEAN": analysis_results['current']['means']['temp_mean'],
-        "CURRENT_TEMP_MAX": analysis_results['current']['extremes']['temp_max'],
-        "CURRENT_TEMP_MIN": analysis_results['current']['extremes']['temp_min'],
-        "CURRENT_PRECIP_ANNUAL": analysis_results['current']['cumulative']['precip_annual_mean'],
-        "CURRENT_PRECIP_MAX": analysis_results['current']['cumulative']['precip_monthly_max'],
-        "FUTURE_TEMP_MEAN": analysis_results['future']['means']['temp_mean'],
-        "FUTURE_TEMP_MAX": analysis_results['future']['extremes']['temp_max'],
-        "FUTURE_TEMP_MIN": analysis_results['future']['extremes']['temp_min'],
-        "FUTURE_PRECIP_ANNUAL": analysis_results['future']['cumulative']['precip_annual_mean'],
-        "FUTURE_PRECIP_MAX": analysis_results['future']['cumulative']['precip_monthly_max'],
-        "SEASONAL_CHANGES": str(analysis_results['changes']),
-        "EXTREME_EVENTS": str(analysis_results['future']['extreme_events']),
-        "VARIABILITY_METRICS": "Data not available",  # Could be added in future
-        "TREND_METRICS": "Data not available"  # Could be added in future
+        
+        # Current conditions
+        "CURRENT_TEMP_MEAN": f"{analysis_results['current']['means']['temp_mean']:.1f}",
+        "CURRENT_TEMP_MAX": f"{analysis_results['current']['extremes']['temp_max']:.1f}",
+        "CURRENT_TEMP_MIN": f"{analysis_results['current']['extremes']['temp_min']:.1f}",
+        "CURRENT_PRECIP_ANNUAL": f"{analysis_results['current']['cumulative']['precip_annual_mean']:.0f}",
+        "CURRENT_PRECIP_MAX": f"{analysis_results['current']['cumulative']['precip_monthly_max']:.0f}",
+        "CURRENT_SNOW_ANNUAL": f"{analysis_results['current']['cumulative']['snow_annual_mean']:.0f}",
+        "CURRENT_SNOW_MAX": f"{analysis_results['current']['cumulative']['snow_monthly_max']:.0f}",
+        "CURRENT_HUMIDITY_MIN": f"{analysis_results['current']['extremes']['humidity_min']:.0f}",
+        "CURRENT_HUMIDITY_MAX": f"{analysis_results['current']['extremes']['humidity_max']:.0f}",
+        "CURRENT_CLOUD_COVER": f"{analysis_results['current']['means']['cloud_cover']:.0f}",
+        "CURRENT_RADIATION": f"{analysis_results['current']['means']['radiation']:.0f}",
+        "CURRENT_WIND_MAX": f"{analysis_results['current']['extremes']['wind_max']:.1f}",
+        
+        # Future conditions (same metrics with FUTURE_ prefix)
+        "FUTURE_TEMP_MEAN": f"{analysis_results['future']['means']['temp_mean']:.1f}",
+        "FUTURE_TEMP_MAX": f"{analysis_results['future']['extremes']['temp_max']:.1f}",
+        "FUTURE_TEMP_MIN": f"{analysis_results['future']['extremes']['temp_min']:.1f}",
+        "FUTURE_PRECIP_ANNUAL": f"{analysis_results['future']['cumulative']['precip_annual_mean']:.0f}",
+        "FUTURE_PRECIP_MAX": f"{analysis_results['future']['cumulative']['precip_monthly_max']:.0f}",
+        "FUTURE_SNOW_ANNUAL": f"{analysis_results['future']['cumulative']['snow_annual_mean']:.0f}",
+        "FUTURE_SNOW_MAX": f"{analysis_results['future']['cumulative']['snow_monthly_max']:.0f}",
+        "FUTURE_HUMIDITY_MIN": f"{analysis_results['future']['extremes']['humidity_min']:.0f}",
+        "FUTURE_HUMIDITY_MAX": f"{analysis_results['future']['extremes']['humidity_max']:.0f}",
+        "FUTURE_CLOUD_COVER": f"{analysis_results['future']['means']['cloud_cover']:.0f}",
+        "FUTURE_RADIATION": f"{analysis_results['future']['means']['radiation']:.0f}",
+        "FUTURE_WIND_MAX": f"{analysis_results['future']['extremes']['wind_max']:.1f}",
+
+        # Seasonal analysis
+        "WINTER_CHANGES": format_seasonal_data(analysis_results['changes'], 'winter'),
+        "SPRING_CHANGES": format_seasonal_data(analysis_results['changes'], 'spring'),
+        "SUMMER_CHANGES": format_seasonal_data(analysis_results['changes'], 'summer'),
+        "AUTUMN_CHANGES": format_seasonal_data(analysis_results['changes'], 'autumn'),
+        
+        # Extreme events
+        "HEAT_EVENTS": f"{analysis_results['future']['extreme_events']['hot_days_annual']:.1f}",
+        "PRECIP_EVENTS": f"{analysis_results['future']['extreme_events']['heavy_rain_annual']:.1f}",
+        "WIND_EVENTS": f"{analysis_results['future']['extreme_events']['high_wind_annual']:.1f}",
+        
+        # Additional metrics
+        "CURRENT_SEASONAL_TEMPS": format_seasonal_data(analysis_results['current'], 'temp')
     }
     
-    # Fill the template
+    # Fill the template with all metrics
     filled_prompt = prompt_template.format(**template_vars)
     
     message = client.messages.create(
