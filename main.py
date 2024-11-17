@@ -57,7 +57,7 @@ if submit and address:
             
             # Get climate data
             df = get_climate_data(lat, lon)
-            
+            st.dataframe(df)
             # Get AI analysis
             response_text = get_ai_analysis(location_name, df, financial_interest, demographic_interest, climate_interest, year)
             
@@ -79,11 +79,6 @@ if submit and address:
                     st.write(response_text)
             except Exception as e:
                 st.error(f"Error processing AI response: {str(e)}")
-
-            # Display visualizations
-            st.subheader("Climate Projections")
-            st.plotly_chart(create_temperature_plot(df), use_container_width=True)
-            st.plotly_chart(create_precipitation_plot(df), use_container_width=True)
             
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
