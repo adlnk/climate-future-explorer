@@ -1,9 +1,19 @@
+# Standard library imports
+import os
+from datetime import datetime
+from typing import Dict, Any
+
+# Third-party imports
 import requests
 import pandas as pd
+import numpy as np
 import anthropic
-import os
 from dotenv import load_dotenv
+import openmeteo_requests
+import requests_cache
+from retry_requests import retry
 
+# Initialize clients
 load_dotenv()
 client = anthropic.Anthropic(api_key=os.getenv('ANTHROPIC_API_KEY'))
 
@@ -23,10 +33,6 @@ def get_location_data(address):
 
 def get_climate_data(lat, lon, start_date="1950-01-01", end_date="2050-12-31"):
     """Fetch comprehensive climate data and aggregate to monthly"""
-    import openmeteo_requests
-    import requests_cache
-    from retry_requests import retry
-
     # Setup the Open-Meteo API client with cache and retry
     cache_session = requests_cache.CachedSession('.cache', expire_after=3600)
     retry_session = retry(cache_session, retries=5, backoff_factor=0.2)
@@ -97,15 +103,145 @@ def get_climate_data(lat, lon, start_date="1950-01-01", end_date="2050-12-31"):
 
     return monthly_df
 
-def calculate_temp_mean(data,year):
+# Basic climate metrics functions
+def calculate_temp_mean(data, year):
+    """Calculate mean temperature for a given year"""
     # Filter rows for current year and calculate mean of temperature_2m_mean
     temp_mean = (
         data[data['date'].dt.year == year]
         ['temperature_2m_mean']
         .mean()
     )
-    
     return temp_mean
+
+def calculate_seasonal_metrics(df, year):
+    """Calculate seasonal statistics for a given year"""
+    # Define seasons by months
+    df = df[df['date'].dt.year == year]
+    df['season'] = df['date'].dt.month.map({12:'winter', 1:'winter', 2:'winter',
+                                          3:'spring', 4:'spring', 5:'spring',
+                                          6:'summer', 7:'summer', 8:'summer',
+                                          9:'fall', 10:'fall', 11:'fall'})
+    
+    seasonal_stats = df.groupby('season').agg({
+        'temperature_2m_mean': ['mean', 'std'],
+        'precipitation_sum': 'sum',
+        'shortwave_radiation_sum': 'mean'
+    })
+    return seasonal_stats
+
+def analyze_climate_data(df: pd.DataFrame, target_date: datetime, window_size: int = 5) -> Dict[str, Any]:
+    """Analyze climate data with sophisticated temporal aggregation"""
+    # Convert date to datetime if needed
+    df['date'] = pd.to_datetime(df['date'])
+    df['year'] = df['date'].dt.year
+    df['month'] = df['date'].dt.month
+
+    def get_window_stats(center_date: datetime) -> Dict[str, Any]:
+        """Calculate statistics for a window centered on a date"""
+        center_year = center_date.year
+        window_data = df[
+            (df['year'] >= center_year - window_size//2) & 
+            (df['year'] <= center_year + window_size//2)
+        ]
+        
+        if len(window_data) == 0:
+            return None
+
+        # Average-based metrics
+        means = {
+            'temp_mean': window_data['temperature_2m_mean'].mean(),
+            'cloud_cover': window_data['cloud_cover_mean'].mean(),
+            'radiation': window_data['shortwave_radiation_sum'].mean(),
+            'humidity_mean': (
+                window_data['relative_humidity_2m_max'].mean() + 
+                window_data['relative_humidity_2m_min'].mean()
+            ) / 2
+        }
+
+        # Extreme metrics
+        extremes = {
+            'temp_max': window_data['temperature_2m_max'].max(),
+            'temp_min': window_data['temperature_2m_min'].min(),
+            'wind_max': window_data['wind_speed_10m_max'].max(),
+            'humidity_max': window_data['relative_humidity_2m_max'].max(),
+            'humidity_min': window_data['relative_humidity_2m_min'].min()
+        }
+
+        # Cumulative metrics
+        annual_stats = window_data.groupby('year').agg({
+            'precipitation_sum': 'sum',
+            'snowfall_sum': 'sum'
+        })
+        
+        cumulative = {
+            'precip_annual_mean': annual_stats['precipitation_sum'].mean(),
+            'precip_monthly_max': window_data['precipitation_sum'].max(),
+            'snow_annual_mean': annual_stats['snowfall_sum'].mean(),
+            'snow_monthly_max': window_data['snowfall_sum'].max()
+        }
+
+        # Extreme events
+        temp_95th = window_data['temperature_2m_max'].quantile(0.95)
+        precip_95th = window_data['precipitation_sum'].quantile(0.95)
+        wind_95th = window_data['wind_speed_10m_max'].quantile(0.95)
+
+        extreme_events = {
+            'hot_days_annual': len(window_data[window_data['temperature_2m_max'] > temp_95th]) / window_size,
+            'heavy_rain_annual': len(window_data[window_data['precipitation_sum'] > precip_95th]) / window_size,
+            'high_wind_annual': len(window_data[window_data['wind_speed_10m_max'] > wind_95th]) / window_size
+        }
+
+        # Seasonal analysis
+        seasons = {
+            'winter': [12, 1, 2],
+            'spring': [3, 4, 5],
+            'summer': [6, 7, 8],
+            'autumn': [9, 10, 11]
+        }
+
+        seasonal_stats = {}
+        for season, months in seasons.items():
+            season_data = window_data[window_data['month'].isin(months)]
+            seasonal_stats[season] = {
+                'temp_mean': season_data['temperature_2m_mean'].mean(),
+                'temp_max': season_data['temperature_2m_max'].max(),
+                'temp_min': season_data['temperature_2m_min'].min(),
+                'precip_total': season_data['precipitation_sum'].mean() * 3,  # Approximate seasonal total
+                'wind_max': season_data['wind_speed_10m_max'].max()
+            }
+
+        return {
+            'means': means,
+            'extremes': extremes,
+            'cumulative': cumulative,
+            'extreme_events': extreme_events,
+            'seasonal': seasonal_stats
+        }
+
+    # Get current window (last 5 years of present data)
+    current_data = get_window_stats(datetime.now())
+    
+    # Get future window (centered on target date)
+    future_data = get_window_stats(target_date)
+    
+    # Calculate changes
+    def compute_changes(current: Dict, future: Dict, prefix: str = '') -> Dict[str, float]:
+        changes = {}
+        for key in current.keys():
+            if isinstance(current[key], dict):
+                changes.update(compute_changes(current[key], future[key], f"{prefix}{key}_"))
+            else:
+                changes[f"{prefix}{key}_change"] = future[key] - current[key]
+        return changes
+
+    changes = compute_changes(current_data, future_data)
+
+    return {
+        'current': current_data,
+        'future': future_data,
+        'changes': changes
+    }
 
 def get_ai_analysis(location_name, df, year):
     """Get AI analysis of climate impact"""
@@ -228,6 +364,8 @@ Use the following variables (which will be replaced with actual values):
 - {location_name} - Name of the location
 - {calculate_temp_mean(df,2024)} - Current mean temperature
 - {calculate_temp_mean(df,year.year)} - Projected future mean temperature
+- {calculate_seasonal_metrics(df,2024)} - Current seasonal temperature and precipitation patterns
+- {calculate_seasonal_metrics(df, year.year)} - Projected seasonal temperature and precipitation patterns
 [Additional variables to be defined based on final data structure]
 
 EXAMPLE SECTION (reference format):
@@ -293,7 +431,7 @@ PROCESS FOR EACH ANALYSIS:
 
     message = client.messages.create(
         model="claude-3-5-sonnet-20241022",
-        max_tokens=1000,
+        max_tokens=2000,
         temperature=0.4,
         system="You are a climate impact analyst. Provide detailed, evidence-based projections of climate change effects on daily life.",
         messages=[

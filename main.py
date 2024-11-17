@@ -2,8 +2,34 @@ import streamlit as st
 import datetime
 from data_handler import get_location_data, get_climate_data, get_ai_analysis
 from visualization import create_temperature_plot, create_precipitation_plot
+from bs4 import BeautifulSoup
+import pandas as pd
+import re
 
 st.set_page_config(page_title="Climate Future Explorer", layout="wide")
+
+# Custom CSS for better styling
+st.markdown("""
+<style>
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 24px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        height: 50px;
+        white-space: pre-wrap;
+        background-color: #f0f2f6;
+        border-radius: 4px;
+        padding: 10px 16px;
+        font-size: 14px;
+    }
+    .metric-container {
+        background-color: #f0f2f6;
+        padding: 20px;
+        border-radius: 8px;
+        margin: 10px 0;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 st.title("Climate Future Explorer")
 st.write("""
@@ -25,7 +51,19 @@ with col2:
                          max_value=datetime.date(2050,1,1),
                          format = 'DD/MM/YYYY')
 
-
+def extract_section_content(response_text, tag_name):
+    """Extract content between XML-like tags"""
+    try:
+        # Make the pattern more flexible to handle potential whitespace and newlines
+        pattern = f"<{tag_name}>\s*(.*?)\s*</{tag_name}>"
+        match = re.search(pattern, response_text, re.DOTALL | re.IGNORECASE)
+        if match:
+            content = match.group(1).strip()
+            return content
+        return ""
+    except Exception as e:
+        st.error(f"Error extracting {tag_name}: {str(e)}")
+        return ""
 
 if submit and address:
     try:
@@ -36,16 +74,51 @@ if submit and address:
             
             # Get climate data
             df = get_climate_data(lat, lon)
-            st.dataframe(df)
 
             # Get AI analysis
             response_text = get_ai_analysis(location_name, df, year)
             
+            # Debug: Print raw response
+            st.write("Debug - Raw Response:", response_text[:200] + "...")
+            
             # Display results
-            st.header("Your Climate Future")
+            st.header(f"What {location_name} will look like in the year {year.year}?")
             
-            st.write(response_text)
-            
+            # Weather Patterns Section
+            with st.expander("🌡️ Weather Pattern Changes", expanded=True):
+                weather_content = extract_section_content(response_text, "weatherPatterns")
+                # Debug: Print extracted content
+                st.write("Debug - Extracted Weather Content:", weather_content[:200] if weather_content else "No content found")
+                if weather_content:
+                    st.markdown(weather_content)
+                else:
+                    st.warning("No weather pattern data found in the response")
+
+            # Health Impacts Section
+            with st.expander("🤒 How different you will feel physically", expanded=True):
+                health_content = extract_section_content(response_text, "healthImpacts")
+                st.markdown(health_content)
+
+            # Financial Impact Section
+            with st.expander("💰 How will the climate affect my wallet?", expanded=True):
+                costs_content = extract_section_content(response_text, "livingCosts")
+                st.markdown(costs_content)
+
+            # Environmental Changes Section
+            with st.expander("🌳 Environmental Impact", expanded=True):
+                env_content = extract_section_content(response_text, "environmentalChanges")
+                st.markdown(env_content)
+
+            # Agricultural Effects Section
+            with st.expander("🌾 Agricultural Changes", expanded=True):
+                agri_content = extract_section_content(response_text, "agriculturalEffects")
+                st.markdown(agri_content)
+
+            # Uncertainty Notes Section
+            with st.expander("ℹ️ Uncertainty Factors", expanded=True):
+                uncertainty_content = extract_section_content(response_text, "uncertaintyNotes")
+                st.markdown(uncertainty_content)
+
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
 
