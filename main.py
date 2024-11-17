@@ -1,4 +1,5 @@
 import streamlit as st
+import datetime
 from data_handler import get_location_data, get_climate_data, get_ai_analysis
 from visualization import create_temperature_plot, create_precipitation_plot
 
@@ -22,26 +23,29 @@ with col1:
 
     # Interest sliders
     st.subheader("What aspects interest you most?")
-    financial_interest = st.slider(
+    financial_interest = st.toggle(
         "Impact on personal finances (housing costs, utilities, insurance, etc.)",
-        0, 10, 5,
         help="Higher values will provide more detail about financial impacts"
     )
     
-    demographic_interest = st.slider(
+    demographic_interest = st.toggle(
         "Impact on local demographics (migration, community changes, etc.)",
-        0, 10, 5,
         help="Higher values will provide more detail about demographic changes"
     )
     
-    climate_interest = st.slider(
+    climate_interest = st.toggle(
         "Impact on local climate (temperature, precipitation, extreme events)",
-        0, 10, 5,
         help="Higher values will provide more detail about climate changes"
     )
 
     # Submit button
     submit = st.button("Analyze Future Impact", type="primary")
+
+with col2:
+    year = st.date_input('Enter your date of interest.',
+                         min_value = datetime.date(2029, 1, 1),
+                         max_value=datetime.date(2050,1,1),
+                         format = 'DD/MM/YYYY')
 
 # Only process if submit is clicked and address is provided
 if submit and address:
@@ -55,7 +59,7 @@ if submit and address:
             df = get_climate_data(lat, lon)
             
             # Get AI analysis
-            response_text = get_ai_analysis(location_name, df, financial_interest, demographic_interest, climate_interest)
+            response_text = get_ai_analysis(location_name, df, financial_interest, demographic_interest, climate_interest, year)
             
             # Display results
             st.header("Your Climate Future")

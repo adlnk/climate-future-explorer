@@ -1,9 +1,11 @@
 import requests
 import pandas as pd
 import anthropic
+import os
+from dotenv import load_dotenv
 
-# Initialize Anthropic client
-client = anthropic.Anthropic(api_key="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")
+load_dotenv()
+client = anthropic.Anthropic(api_key=os.getenv('ANTHROPIC_API_KEY'))
 
 def get_location_data(address):
     """Get latitude, longitude and location name from address"""
@@ -30,9 +32,9 @@ def get_climate_data(lat, lon):
         'precipitation': climate_data['daily']['precipitation_sum']
     })
 
-def get_ai_analysis(location_name, df, financial_interest, demographic_interest, climate_interest):
+def get_ai_analysis(location_name, df, financial_interest, demographic_interest, climate_interest, year):
     """Get AI analysis of climate impact"""
-    prompt = f"""I live in {location_name}. In 5 years time, how different will my day-to-day life be? 
+    prompt = f"""I live in {location_name}. In the year {year}, how will my day-to-day life be different from how it was in the year 2024? 
 
 Please provide your response in two distinct parts:
 
@@ -41,9 +43,9 @@ PART 1: Write a vivid, first-person narrative (about 200 words) describing a typ
 PART 2: Provide 5-7 concrete statistics and projections that support the narrative above.
 
 In your response, please emphasize:
-{"- Financial impacts (housing, utilities, insurance, adaptation costs)" if financial_interest > 5 else ""}
-{"- Demographic changes and community effects" if demographic_interest > 5 else ""}
-{"- Local climate changes and their direct effects" if climate_interest > 5 else ""}
+{"- Financial impacts (housing, utilities, insurance, adaptation costs)" if financial_interest else ""}
+{"- Demographic changes and community effects" if demographic_interest else ""}
+{"- Local climate changes and their direct effects" if climate_interest else ""}
 
 Base your response on climate projections showing:
 - Average maximum temperature: {df['temp_max'].mean():.1f}°C
@@ -51,9 +53,9 @@ Base your response on climate projections showing:
 """
     
     message = client.messages.create(
-        model="claude-3-opus-20240229",
+        model="claude-3-5-haiku-20241022",
         max_tokens=1000,
-        temperature=0.7,
+        temperature=0.4,
         system="You are a climate impact analyst. Provide detailed, evidence-based projections of climate change effects on daily life.",
         messages=[
             {"role": "user", "content": prompt}
