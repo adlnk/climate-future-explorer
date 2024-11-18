@@ -52,6 +52,7 @@ Extreme Events Analysis:
 - Wind extremes: {WIND_EVENTS}
 
 Trend Analysis (Supporting Context):
+
 - Seasonal changes: {SEASONAL_CHANGES}
 - Extreme event frequency: {EXTREME_EVENTS}
 - Variability metrics: {VARIABILITY_METRICS}

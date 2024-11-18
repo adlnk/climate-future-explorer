@@ -268,6 +268,21 @@ def get_ai_analysis(location_name, df, year):
     
     def format_seasonal_data(period_data, metric_type):
         """Helper function to format seasonal data nicely"""
+        if not period_data or 'seasonal' not in period_data:
+            return {}
+            
+        # Handle temperature data specifically
+        if metric_type == 'temp':
+            return {
+                season: {
+                    'mean': data['temp_mean'] if 'temp_mean' in data else None,
+                    'max': data['temp_max'] if 'temp_max' in data else None,
+                    'min': data['temp_min'] if 'temp_min' in data else None
+                }
+                for season, data in period_data['seasonal'].items()
+            }
+            
+        # Handle other metrics
         return {
             season: {
                 key: value for key, value in data.items()
@@ -275,6 +290,31 @@ def get_ai_analysis(location_name, df, year):
             }
             for season, data in period_data['seasonal'].items()
         }
+
+    # Calculate additional metrics for trend analysis
+    seasonal_changes = {
+        season: {
+            metric: future[metric] - current[metric]
+            for metric in ['temp_mean', 'temp_max', 'temp_min', 'precip_total', 'wind_max']
+        }
+        for season, (current, future) in [
+            (season, (
+                analysis_results['current']['seasonal'][season],
+                analysis_results['future']['seasonal'][season]
+            ))
+            for season in ['winter', 'spring', 'summer', 'autumn']
+        ]
+    }
+
+    extreme_events = {
+        'current': analysis_results['current']['extreme_events'],
+        'future': analysis_results['future']['extreme_events'],
+        'changes': {
+            key: analysis_results['future']['extreme_events'][key] - 
+                 analysis_results['current']['extreme_events'][key]
+            for key in analysis_results['current']['extreme_events'].keys()
+        }
+    }
 
     # Prepare comprehensive template variables
     template_vars = {
@@ -295,7 +335,7 @@ def get_ai_analysis(location_name, df, year):
         "CURRENT_RADIATION": f"{analysis_results['current']['means']['radiation']:.0f}",
         "CURRENT_WIND_MAX": f"{analysis_results['current']['extremes']['wind_max']:.1f}",
         
-        # Future conditions (same metrics with FUTURE_ prefix)
+        # Future conditions
         "FUTURE_TEMP_MEAN": f"{analysis_results['future']['means']['temp_mean']:.1f}",
         "FUTURE_TEMP_MAX": f"{analysis_results['future']['extremes']['temp_max']:.1f}",
         "FUTURE_TEMP_MIN": f"{analysis_results['future']['extremes']['temp_min']:.1f}",
@@ -310,10 +350,10 @@ def get_ai_analysis(location_name, df, year):
         "FUTURE_WIND_MAX": f"{analysis_results['future']['extremes']['wind_max']:.1f}",
 
         # Seasonal analysis
-        "WINTER_CHANGES": format_seasonal_data(analysis_results['changes'], 'winter'),
-        "SPRING_CHANGES": format_seasonal_data(analysis_results['changes'], 'spring'),
-        "SUMMER_CHANGES": format_seasonal_data(analysis_results['changes'], 'summer'),
-        "AUTUMN_CHANGES": format_seasonal_data(analysis_results['changes'], 'autumn'),
+        "WINTER_CHANGES": format_seasonal_data(analysis_results['future'], 'winter'),
+        "SPRING_CHANGES": format_seasonal_data(analysis_results['future'], 'spring'),
+        "SUMMER_CHANGES": format_seasonal_data(analysis_results['future'], 'summer'),
+        "AUTUMN_CHANGES": format_seasonal_data(analysis_results['future'], 'autumn'),
         
         # Extreme events
         "HEAT_EVENTS": f"{analysis_results['future']['extreme_events']['hot_days_annual']:.1f}",
@@ -321,7 +361,12 @@ def get_ai_analysis(location_name, df, year):
         "WIND_EVENTS": f"{analysis_results['future']['extreme_events']['high_wind_annual']:.1f}",
         
         # Additional metrics
-        "CURRENT_SEASONAL_TEMPS": format_seasonal_data(analysis_results['current'], 'temp')
+        "CURRENT_SEASONAL_TEMPS": format_seasonal_data(analysis_results['current'], 'temp'),
+        "FUTURE_SEASONAL_TEMPS": format_seasonal_data(analysis_results['future'], 'temp'),
+        "SEASONAL_CHANGES": str(seasonal_changes) if seasonal_changes else "No seasonal change data available",
+        "EXTREME_EVENTS": str(extreme_events) if extreme_events else "No extreme event data available",
+        "VARIABILITY_METRICS": "Data not available",  # Placeholder for now
+        "TREND_METRICS": "Data not available",  # Placeholder for now
     }
     
     # Fill the template with all metrics

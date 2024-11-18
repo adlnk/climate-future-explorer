@@ -1,0 +1,11 @@
+streamlit
+pandas
+numpy
+requests
+anthropic
+python-dotenv
+plotly
+beautifulsoup4
+openmeteo-requests
+requests-cache
+retry-requests
